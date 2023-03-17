@@ -1,0 +1,49 @@
+CREATE TABLE users (
+	id INTEGER,
+	name TEXT NOT NULL,
+	remaining_load REAL,
+	PRIMARY KEY (id)
+);
+
+CREATE TABLE tasks (
+	id INTEGER,
+	name TEXT NOT NULL,
+	one_off INTEGER NOT NULL,
+	weekday INTEGER,
+	assigned_to INTEGER,
+	completed_on TEXT,
+	PRIMARY KEY (id),
+	FOREIGN KEY (assigned_to) REFERENCES users (id) ON DELETE CASCADE
+);t
+
+CREATE TABLE task_estimates (
+	task_id INTEGER NOT NULL,
+	user_id INTEGER NOT NULL,
+	time_estimate INTEGER NOT NULL,
+	FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE CASCADE,
+	FOREIGN KEY (task_id) REFERENCES tasks (id) ON DELETE CASCADE
+);
+
+# Log of tasks completed/uncompleted in the previous weeks
+CREATE TABLE task_history (
+	user_id INTEGER NOT NULL,
+	task_id INTEGER NOT NULL,
+	completed_on TEXT,
+	FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE CASCADE,
+	FOREIGN KEY (task_id) REFERENCES tasks (id) ON DELETE CASCADE
+);
+
+CREATE TRIGGER record_task_history AFTER UPDATE OF assigned_to ON tasks FOR EACH ROW
+WHEN OLD.assigned_to IS NOT NULL AND NEW.assigned_to IS NULL BEGIN
+	INSERT INTO task_history (user_id, task_id, completed_on)
+	VALUES (OLD.assigned_to, NEW.id, OLD.completed_on);
+END;
+
+INSERT INTO users (id, name) VALUES (1, "User 1");
+INSERT INTO users (id, name) VALUES (2, "User 2");
+
+PRAGMA foreign_keys = ON;
+
+# DUMMY DATA INSERTION
+
+INSERT INTO tasks (name, one_off, weekday) VALUES ("Vacuuming, sweeping, dusting", 0, NULL), ("Laundry", 0, NULL), ("Fold and put away clean clothes", 0, NULL), ("Walk the dog", 0, NULL), ("Clean litter box", 0, NULL), ("Meal preparation", 0, NULL), ("Wash dishes after each meal", 0, NULL), ("Take the trash out when full", 0, NULL), ("Scrub sinks, tubs, showers and toilets", 0, NULL), ("Take the car in to be serviced", 1, 3);
